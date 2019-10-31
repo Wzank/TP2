@@ -3,7 +3,7 @@ pragma solidity ^0.5.6;
 import "./Owner.sol";
 import "./ERC20.sol";
 
-contract SmartContract is ERC20, Owner{
+contract JeffToken is ERC20, Owner{
     using SafeMath2 for uint;
     
     string public symbol;
@@ -15,8 +15,8 @@ contract SmartContract is ERC20, Owner{
     
     constructor()public
     {
-        symbol ="Contract";
-        name = "SmartContract";
+        symbol ="Jeff";
+        name = "JeffToken";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint(decimals);
         balances[owner] = _totalSupply;
@@ -90,7 +90,7 @@ pragma solidity ^0.5.6;
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721Full.sol";
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/ownership/Ownable.sol";
 
-import "./SmartContract.sol";
+import "./JeffToken.sol";
 
 
 
@@ -127,7 +127,7 @@ contract WeaponToken is ERC721Full, Ownable {
     uint rand = uint(keccak256(abi.encodePacked(_str)));
     return rand % dnaModulus;
   }
-  function buyRandomWeapon(string calldata _name) external payable {   
+  function createWeapon(string calldata _name) external payable {   
     require(msg.value == creationUpFee);
     require(ownerWeaponCount[msg.sender] < 10);
     _createWeapon(_name,_generateRandomDna(_name));
@@ -149,11 +149,12 @@ contract WeaponToken is ERC721Full, Ownable {
   
   
   }
- SmartContract smt;
+ JeffToken jk;
 
 function setADR(address payable _address) external onlyOwner {
-      smt = SmartContract(_address);
+      jk = JeffToken(_address);
     }
+
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
