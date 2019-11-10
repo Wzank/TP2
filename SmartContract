@@ -1,10 +1,39 @@
 pragma solidity ^0.5.6;
 
-import "./Owner.sol";
 import "./ERC20.sol";
+import "./Owner.sol";
+
+library TopMath{
+    function add(uint a, uint b)internal pure
+        returns(uint c)
+        {
+            c=a+b;
+            require(c>=a);
+            
+        }
+    function sub(uint a, uint b)internal pure
+        returns(uint c)
+        {
+            c=a-b;
+        }
+    function mul(uint a, uint b)internal pure
+        returns(uint c)
+        {
+            c=a*b;
+            require(a==0 ||c/a==b);
+        }
+    function div(uint a, uint b)internal pure
+        returns(uint c)
+        {
+            require(b>0);
+            c=a/b;
+        }
+}
+
+
 
 contract JeffToken is ERC20, Owner{
-    using SafeMath2 for uint;
+    using TopMath for uint;
     
     string public symbol;
     string public name;
@@ -15,8 +44,8 @@ contract JeffToken is ERC20, Owner{
     
     constructor()public
     {
-        symbol ="Jeff";
-        name = "JeffToken";
+        symbol ="Token";
+        name = "NewToken";
         decimals = 18;
         _totalSupply = 1000000 * 10**uint(decimals);
         balances[owner] = _totalSupply;
@@ -47,51 +76,29 @@ contract JeffToken is ERC20, Owner{
             emit Approval(msg.sender,spender,tokens);  
             return true ;
         }
-    function transferFrom(address from, address to, uint tokens)
-        public returns(bool sucess){
+    function transferFrom(address from, address to, uint tokens) public returns(bool sucess){
             balances[from] = balances[from].sub(tokens);
             allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
             balances[to].add(tokens);
             emit Transfer(from,to,tokens);
             return true;
         }
+        
+    function pay(address _from, address _to, uint tokens) public returns (bool success) {
+        balances[_from] = balances[_from].sub(tokens); 
+        balances[_to] = balances[_to].add(tokens);
+        emit Transfer(_from, _to, tokens);
+        return true;
+    }
 }
-library SafeMath2{
-    function add(uint a, uint b)internal pure
-        returns(uint c)
-        {
-            c=a+b;
-            require(c>=a);
-            
-        }
-    function sub(uint a, uint b)internal pure
-        returns(uint c)
-        {
-            require(b<=a);
-            c=a-b;
-        }
-    function mul(uint a, uint b)internal pure
-        returns(uint c)
-        {
-            c=a*b;
-            require(a==0 ||c/a==b);
-        }
-    function div(uint a, uint b)internal pure
-        returns(uint c)
-        {
-            require(b>0);
-            c=a/b;
-        }
-}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 pragma solidity ^0.5.6;
 
 
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721Full.sol";
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/ownership/Ownable.sol";
-
 import "./JeffToken.sol";
-
 
 
 contract WeaponToken is ERC721Full, Ownable {
@@ -100,7 +107,10 @@ contract WeaponToken is ERC721Full, Ownable {
   uint dnaDigits = 16;
   uint dnaModulus = 10 ** dnaDigits;
   
-  uint creationUpFee = 0.001 ether;
+  uint createWeaponFee = 0.001 ether;
+  uint creationUpFee = 5;
+  uint createFeeCorrected = 1;
+  uint weaponPrice = 1;
   
   struct Weapon {
     string name;
@@ -116,6 +126,11 @@ contract WeaponToken is ERC721Full, Ownable {
   Weapon[] public weapons;
   mapping (uint => address) public weaponIndexToOwner;
   mapping (address => uint) ownerWeaponCount;
+  JeffToken tokenContract;
+  
+  function setJeffToken(address payable novoJeff) external onlyOwner  {
+      tokenContract = JeffToken(novoJeff);
+  }
 
   function _createWeapon(string memory _name, uint _dna) internal {
     uint id = weapons.push(Weapon(_name, _dna,uint64(now))) - 1;
@@ -127,15 +142,23 @@ contract WeaponToken is ERC721Full, Ownable {
     uint rand = uint(keccak256(abi.encodePacked(_str)));
     return rand % dnaModulus;
   }
-  function createWeapon(string calldata _name) external payable {   
-    require(msg.value == creationUpFee);
+  function createRandomWeapon(string calldata _name) external payable {   
+    require(msg.value == createWeaponFee);
     require(ownerWeaponCount[msg.sender] < 10);
     _createWeapon(_name,_generateRandomDna(_name));
   }
+  
+  modifier haveBalance{
+    require(tokenContract.balanceOf(msg.sender) >= creationUpFee);
+    _;
+  }
 
-
-  function getWeaponData(uint weaponId) external view returns(string memory, uint256,uint64) {
-    return (weapons[weaponId].name,weapons[weaponId]._weaponDna,weapons[weaponId].birthTime);
+  function buyWeaponFrom(address buyer, address seller, uint weaponId) external payable {
+     require(seller == weaponIndexToOwner[weaponId]);
+     require(tokenContract.balanceOf(buyer) > weaponPrice);
+     tokenContract.pay(buyer, seller, weaponPrice);
+     weaponPrice += 1;
+     weaponIndexToOwner[weaponId] = buyer;
   }
   
   function mixWeaponDna(string calldata _name,uint weaponId, uint weaponId2)external payable{
@@ -146,15 +169,7 @@ contract WeaponToken is ERC721Full, Ownable {
     myWeapon._weaponDna += myWeapon2._weaponDna % dnaModulus;
     uint newWeaponDna = (myWeapon._weaponDna) / 2;
     _createWeapon(_name, newWeaponDna);
-  
-  
   }
- JeffToken jk;
-
-function setADR(address payable _address) external onlyOwner {
-      jk = JeffToken(_address);
-    }
-
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
