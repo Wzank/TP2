@@ -118,15 +118,26 @@ contract WeaponToken is ERC721Full, Ownable {
     uint64 birthTime;
   }
   
+  struct Auction{
+      uint weaponId;
+      uint maxBids;
+      uint bestBid;
+      uint currentParticipants;
+      address currentWinner;
+      bool finished;
+  }
+  
   constructor() public ERC721Full("WeaponToken","WEAPON"){
       
   }
+
 
 
   Weapon[] public weapons;
   mapping (uint => address) public weaponIndexToOwner;
   mapping (address => uint) ownerWeaponCount;
   JeffToken tokenContract;
+  Auction currentAuction;
   
   function setJeffToken(address payable novoJeff) external onlyOwner  {
       tokenContract = JeffToken(novoJeff);
@@ -151,6 +162,28 @@ contract WeaponToken is ERC721Full, Ownable {
   modifier haveBalance{
     require(tokenContract.balanceOf(msg.sender) >= creationUpFee);
     _;
+  }
+  
+  function beginAuction(uint _weaponId, uint _maxParticipants) external {
+      require(msg.sender == weaponIndexToOwner[_weaponId]);
+      currentAuction = Auction(_weaponId, _maxParticipants, 0, 0, msg.sender,false);
+  }
+  
+  function bid(uint value) external returns(string memory message){
+      require(tokenContract.balanceOf(msg.sender) >= value);
+      require(!currentAuction.finished);
+      if (value > currentAuction.bestBid){
+          currentAuction.bestBid = value;
+          currentAuction.currentWinner = msg.sender;
+      }
+      currentAuction.currentParticipants++;
+      if (currentAuction.currentParticipants >= currentAuction.maxBids){
+          currentAuction.finished = true;
+          tokenContract.pay(currentAuction.currentWinner, weaponIndexToOwner[currentAuction.weaponId], currentAuction.bestBid);
+          weaponIndexToOwner[currentAuction.weaponId] = currentAuction.currentWinner;
+          return "Auction finished!";
+      }
+      return "Auction still running!";
   }
 
   function buyWeaponFrom(address buyer, address seller, uint weaponId) external payable {
