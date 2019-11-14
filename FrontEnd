@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Front-end</title>
+    <script language="javascript" type="text/javascript" src="./web3.min.js"></script></script>
+    <script language="javascript" type="text/javascript" src="./abi.js"></script>
+	<script type="text/javascript">
+        var myContract;
+
+		var userAccount;
+		
+		var web3js;
+		
+		
+      	function startApp() {
+        	var address = "0xD8B11720C913e89e2e405aCe2Ae88A9a61eA5Eee";
+        	//myContract = web3js.eth.contract(abi, address);
+        	myContract = new web3js.eth.Contract(abi, address);
+        	
+            web3.eth.getAccounts(function(error, accounts) {
+                userAccount = accounts[0];
+                                 if (typeof userAccount !== 'undefined'){
+                console.log('userAccount Detected');
+                                 }else{
+                                 console.log('No userAccount Detected... ERROR!!!')
+console.log(error)
+                                 }
+            });
+            
+      	}
+      
+      	
+      	function getWeaponDetails(id) {
+  			return myContract.methods.weapons(id).call()
+		}
+    
+    window.addEventListener('load', async () => {
+        // Modern dapp browsers...
+        if (window.ethereum) {
+            window.web3 = new Web3(ethereum);
+            try {
+                // Request account access if needed
+                await ethereum.enable();
+                web3js = new Web3(web3.currentProvider);
+                            
+            } catch (error) {
+                // User denied account access...
+            }
+        }
+        // Legacy dapp browsers...
+        else if (window.web3) {
+            window.web3 = new Web3(web3.currentProvider);
+            // Acccounts always exposed
+        }
+        // Non-dapp browsers...
+        else {
+            console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+        }
+                            startApp()
+    });
+        
+        /*window.addEventListener('load', function () {
+        
+            if (typeof web3 !== 'undefined') {
+            	//web3js = require('web3')
+            	web3js = new Web3(web3.currentProvider);
+            	//web3js = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io')); // 8080 for cpp/AZ, 8545 for go/mist
+				//web3js = new Web3(new Web3.providers.WebsocketProvider("wss://mainnet.infura.io/ws"));
+            	//web3js = new Web3("https://kovan.infura.io");
+                                console.log('Web3 Detected');
+                //web3js = new Web3(web3.currentProvider);
+            } else {
+                console.log('No Web3 Detected... ERROR!!!')
+            }
+            startApp()
+        })*/
+        
+        function BuyWeaponTest(){
+			var weaponBuy = document.getElementById("weaponBuy").value
+        	if (typeof userAccount !== 'undefined') {
+                myContract.methods.createRandomWeapon(weaponBuy).send({ from: userAccount, value: web3js.utils.toWei("0.001", "ether") })
+				
+            }else{
+                console.log('No userAccount Detected... ERROR!!!')
+                
+            }
+        	
+        }
+		function mixWeaponDna(){
+            var weapon1 = document.getElementById("weaponMix1").value
+            var weapon2 = document.getElementById("weaponMix2").value
+            var weaponName = document.getElementById("weaponMixName").value
+
+            myContract.methods.mixWeaponDna(weaponName, weapon1, weapon2).send({from: userAccount})
+        }
+        
+        
+        function getWeaponTest(){
+        	myContract.methods.weapons(0).call()
+				.then(function(result) {
+  					console.log("0: " + JSON.stringify(result));
+				});
+        }
+		
+		function getWeaponTest(){
+            var id = document.getElementById("getWeaponId").value
+            myContract.methods.weapons(id).call().then(function(result) {
+                console.log("0: " + JSON.stringify(result));
+                document.getElementById("getWeaponIdOutput").innerHTML = result.name;
+            });
+        }
+        
+    	
+    </script>
+  </head>
+  <body>
+  
+  <h1> front GIGANTE end </h1>
+  
+  
+  
+    <button type="button" onClick="contractAddress();">Set adress</button>
+	<input type = "text" id = "setAdress" value = " 0 ">
+	</br>
+  
+	<button type="button" onClick="getWeaponTest();">Get Weapon</button>
+	<input type = "text" id = "getWeaponId" value = " 0 "> 
+	<p id= "getWeaponIdOutput"> </p>
+	</br>
+	
+	<button type="button" onClick="BuyWeaponTest();">Buy Weapon</button>
+	<input type="text" id = "weaponBuy" value="Weapon name">
+	</br>
+	
+	<button type="button" onClick="mixWeaponDna();"> Mix Weapon Dna </button>
+	<input type="text" id = "weaponMix1" value="Id weapon 1 ">
+	<input type="text" id = "weaponMix2" value="Id weapon 2">
+	<input type="text" id = "weaponMixName" value="MixWeapon name">
+	
+  </body>
+</html>
