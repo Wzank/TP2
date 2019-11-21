@@ -102,7 +102,7 @@ import "./JeffToken.sol";
 
 
 contract WeaponToken is ERC721Full, Ownable {
-  event NewWeapon(uint weaponId, string name, uint dna, uint color);
+  event NewWeapon(uint weaponId, string name, uint dna);
 
   uint dnaDigits = 16;
   uint dnaModulus = 10 ** dnaDigits;
@@ -116,7 +116,6 @@ contract WeaponToken is ERC721Full, Ownable {
     string name;
     uint256 _weaponDna;
     uint64 birthTime;
-    uint _color;
   }
   
   struct Auction{
@@ -140,25 +139,24 @@ contract WeaponToken is ERC721Full, Ownable {
   JeffToken tokenContract;
   Auction currentAuction;
   
-  function setJeffToken(address payable novoJeff) external onlyOwner  {
+  function setJeffToken(address payable novoJeff) external  {
       tokenContract = JeffToken(novoJeff);
   }
 
-  function _createWeapon(string memory _name, uint _dna, uint _color) internal {
-    uint id = weapons.push(Weapon(_name, _dna,uint64(now), _color)) - 1;
+  function _createWeapon(string memory _name, uint _dna) internal {
+    uint id = weapons.push(Weapon(_name, _dna,uint64(now)))- 1;
     weaponIndexToOwner[id] = msg.sender;
     ownerWeaponCount[msg.sender]++;
-    emit NewWeapon(id, _name, _dna, _color);
+    emit NewWeapon(id, _name, _dna);
   }
   function _generateRandomDna(string memory _str) private view returns (uint) {
     uint rand = uint(keccak256(abi.encodePacked(_str)));
     return rand % dnaModulus;
   }
-  function createRandomWeapon(string calldata _name, uint _color) external payable {   
+  function createRandomWeapon(string calldata _name) external payable {   
     require(msg.value == createWeaponFee);
     require(ownerWeaponCount[msg.sender] < 10);
-    require(_color<=255);
-    _createWeapon(_name,_generateRandomDna(_name), _color);
+    _createWeapon(_name,_generateRandomDna(_name));
   }
   
   modifier haveBalance{
@@ -203,8 +201,7 @@ contract WeaponToken is ERC721Full, Ownable {
     Weapon storage myWeapon2 = weapons[weaponId2];
     myWeapon._weaponDna += myWeapon2._weaponDna % dnaModulus;
     uint newWeaponDna = (myWeapon._weaponDna) / 2;
-    uint newWeaponColor = (myWeapon._color + myWeapon2._color) /2;
-    _createWeapon(_name, newWeaponDna, newWeaponColor);
+    _createWeapon(_name, newWeaponDna);
   }
 
 }
